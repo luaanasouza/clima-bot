@@ -1,0 +1,25 @@
+{
+  "casa_havan": {
+    "nome": "Casa → Havan → volta"
+  },
+  "una_shopping": {
+    "nome": "Parque Una → voltas ao redor do shopping até completar os km",
+    "seguro_no_escuro": true
+  },
+  "una_ferreira_viana": {
+    "nome": "Parque Una → Av. Ferreira Viana → em direção à praia",
+    "relevo": "percurso reto, com algumas subidas"
+  },
+  "sprints_quartier": {
+    "nome": "Bairro Quartier",
+    "relevo": "percurso com muitas subidas"
+  },
+  "sprints_una": {
+    "nome": "Região do Una",
+    "relevo": "percurso com subidinhas",
+    "seguro_no_escuro": true
+  },
+  "pedal_idelfonso": {
+    "nome": "Ciclovia da Idelfonso → Dom Joaquim ou Salgado Filho em direção à Havan"
+  }
+}

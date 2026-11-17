@@ -1,0 +1,68 @@
+[
+  {
+    "data": "2026-11-18",
+    "treino": "Corrida 8 km",
+    "icone": "🏃",
+    "rotas": ["casa_havan"]
+  },
+  {
+    "data": "2026-11-19",
+    "treino": "Pedalar",
+    "icone": "🚴",
+    "rotas": ["pedal_idelfonso"]
+  },
+  {
+    "data": "2026-11-20",
+    "treino": "Tiros: 2 km de aquecimento + 10x100 m em subida + 2 km de desaquecimento",
+    "icone": "⚡",
+    "rotas": ["sprints_quartier", "sprints_una"]
+  },
+  {
+    "data": "2026-11-21",
+    "treino": "Pedal longo de 30 km",
+    "icone": "🚴",
+    "rotas": ["pedal_idelfonso"]
+  },
+  {
+    "data": "2026-11-22",
+    "treino": "Treino longo de corrida: 12 km",
+    "icone": "🏃",
+    "rotas": ["una_shopping", "una_ferreira_viana"]
+  },
+  {
+    "data": "2026-11-23",
+    "treino": "Caminhada de 30 min",
+    "icone": "🚶",
+    "rotas": []
+  },
+  {
+    "data": "2026-11-24",
+    "treino": "Corrida 6 km",
+    "icone": "🏃",
+    "rotas": ["casa_havan"]
+  },
+  {
+    "data": "2026-11-25",
+    "treino": "Pedal de 6 km",
+    "icone": "🚴",
+    "rotas": ["pedal_idelfonso"]
+  },
+  {
+    "data": "2026-11-26",
+    "treino": "Tiros: 2 km de aquecimento + 10x500 m + 2 km de desaquecimento",
+    "icone": "⚡",
+    "rotas": []
+  },
+  {
+    "data": "2026-11-27",
+    "treino": "Pedal de 10 km",
+    "icone": "🚴",
+    "rotas": ["pedal_idelfonso"]
+  },
+  {
+    "data": "2026-11-28",
+    "treino": "Treino longo de corrida: 14 km",
+    "icone": "🏃",
+    "rotas": ["una_shopping", "una_ferreira_viana"]
+  }
+]
