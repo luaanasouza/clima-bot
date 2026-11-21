@@ -20,7 +20,7 @@ CHUVA_MAX = 40
 VENTO_MAX = 25
 TEMP_MIN = 8
 TEMP_MAX = 28
-HORARIO_ENVIO = "05:00"
+HORARIO_ENVIO = "21:00"
 SAIDA = "05:30"  # horário em que você costuma sair para treinar
 
 # Pasta onde está este arquivo (os JSON ficam ao lado dele)
