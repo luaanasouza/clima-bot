@@ -27,16 +27,18 @@ SAIDA = "05:30"  # horário em que você costuma sair para treinar
 PASTA = os.path.dirname(os.path.abspath(__file__))
 
 # Horário de Brasília (UTC-3). O GitHub roda em UTC, então fixamos o fuso aqui
-# para o "dia de hoje" ser sempre o dia de Pelotas.
+# para o cálculo do dia ser sempre o horário de Pelotas.
 FUSO_BRASIL = timezone(timedelta(hours=-3))
 
 
-def data_de_hoje():
-    # Para testar outro dia: no terminal, set DATA_TESTE=2026-11-20
+def data_alvo():
+    # Para testar um dia específico: no terminal, set DATA_TESTE=2026-11-22
     teste = os.getenv("DATA_TESTE")
     if teste:
         return teste
-    return datetime.now(FUSO_BRASIL).strftime("%Y-%m-%d")
+    # Como o envio é à noite (21h), buscamos o treino do dia seguinte (amanhã)
+    amanha = datetime.now(FUSO_BRASIL) + timedelta(days=1)
+    return amanha.strftime("%Y-%m-%d")
 
 
 def carregar_json(nome_arquivo):
@@ -52,21 +54,22 @@ def carregar_json(nome_arquivo):
     return None
 
 
-def esta_escuro(dados):
-    """Compara o horário de saída com o nascer do sol. Devolve (escuro, hora_do_nascer)."""
+def esta_escuro(dados, dia_alvo):
+    """Compara o horário de saída com o nascer do sol do dia alvo."""
     try:
-        nascer = dados["daily"]["sunrise"][0]  # ex.: "2026-11-17T05:34"
-        hora_nascer = nascer[11:16]            # fica só "05:34"
+        for nascer in dados["daily"]["sunrise"]:
+            if nascer.startswith(dia_alvo):
+                hora_nascer = nascer[11:16]  # fica só "05:34"
+                return SAIDA < hora_nascer, hora_nascer
     except (KeyError, IndexError, TypeError):
-        return False, None  # sem a informação do sol, não avisa nada
-    # Os dois são "HH:MM" com zero na frente, então dá para comparar como texto
-    return SAIDA < hora_nascer, hora_nascer
+        pass
+    return False, None
 
 
-def montar_bloco_treino(hoje=None, escuro=False):
-    """Procura o treino de hoje no treinos.json e monta o texto com treino e rota."""
-    if hoje is None:
-        hoje = data_de_hoje()
+def montar_bloco_treino(dia_alvo=None, escuro=False):
+    """Procura o treino de amanhã no treinos.json e monta o texto com treino e rota."""
+    if dia_alvo is None:
+        dia_alvo = data_alvo()
 
     treinos = carregar_json("treinos.json")
     if not isinstance(treinos, list):
@@ -77,9 +80,9 @@ def montar_bloco_treino(hoje=None, escuro=False):
         rotas = {}
 
     for treino in treinos:
-        if treino.get("data") == hoje:
+        if treino.get("data") == dia_alvo:
             icone = treino.get("icone", "🏃")
-            linhas = [f"{icone} Treino de hoje: {treino.get('treino', 'Treino')}"]
+            linhas = [f"{icone} Treino de amanhã: {treino.get('treino', 'Treino')}"]
 
             fichas = [rotas[r] for r in treino.get("rotas", []) if r in rotas]
             if len(fichas) == 1:
@@ -89,13 +92,13 @@ def montar_bloco_treino(hoje=None, escuro=False):
                 for ficha in fichas:
                     linhas.append("• " + texto_da_rota(ficha, escuro))
 
-            # Está escuro e nenhuma rota de hoje é a mais segura: avisa
+            # Está escuro e nenhuma rota de amanhã é a mais segura: avisa
             if escuro and fichas and not any(f.get("seguro_no_escuro") for f in fichas):
-                linhas.append("⚠️ Nenhuma rota de hoje está marcada como segura no escuro. Considere fazer no Una.")
+                linhas.append("⚠️ Nenhuma rota de amanhã está marcada como segura no escuro. Considere fazer no Una.")
 
             return "\n".join(linhas) + "\n\n"
 
-    return "😴 Hoje não há treino no plano.\n\n"
+    return "😴 Amanhã não há treino no plano.\n\n"
 
 
 def texto_da_rota(ficha, escuro=False):
@@ -115,14 +118,14 @@ def buscar_previsao():
         "hourly": "temperature_2m,precipitation_probability,wind_speed_10m",
         "timezone": "America/Sao_Paulo",
         "daily": "sunrise",  # hora do nascer do sol
-        "forecast_days": 1,
+        "forecast_days": 2,  # hoje e amanhã
     }
     resposta = requests.get(url, params=parametros, timeout=10)
     resposta.raise_for_status()
     return resposta.json()
 
 
-def pegar_horas_do_treino(dados):
+def pegar_horas_do_treino(dados, dia_alvo):
     horas = dados["hourly"]["time"]
     temps = dados["hourly"]["temperature_2m"]
     chuvas = dados["hourly"]["precipitation_probability"]
@@ -133,11 +136,12 @@ def pegar_horas_do_treino(dados):
     ventos_treino = []
 
     for i in range(len(horas)):
-        hora = int(horas[i][11:13])
-        if HORA_INICIO <= hora <= HORA_FIM:
-            temps_treino.append(temps[i])
-            chuvas_treino.append(chuvas[i])
-            ventos_treino.append(ventos[i])
+        if horas[i].startswith(dia_alvo):
+            hora = int(horas[i][11:13])
+            if HORA_INICIO <= hora <= HORA_FIM:
+                temps_treino.append(temps[i])
+                chuvas_treino.append(chuvas[i])
+                ventos_treino.append(ventos[i])
 
     return min(temps_treino), max(temps_treino), max(chuvas_treino), max(ventos_treino)
 
@@ -155,11 +159,11 @@ def decidir(temp_min, temp_max, chuva_max, vento_max):
         problemas.append(f"frio de {temp_min:.0f}°C")
 
     if len(problemas) == 0:
-        veredito = "🟢 Ótimo dia para correr ou pedalar!"
+        veredito = "🟢 Ótimo dia para correr ou pedalar amanhã!"
     elif len(problemas) == 1:
-        veredito = "🟡 Dá para ir, mas com atenção."
+        veredito = "🟡 Dá para ir amanhã, mas com atenção."
     else:
-        veredito = "🔴 Melhor evitar o treino na rua hoje."
+        veredito = "🔴 Melhor evitar o treino na rua amanhã."
 
     return veredito, problemas
 
@@ -171,24 +175,25 @@ def enviar_telegram(texto):
 
 
 def rodar():
+    dia_alvo = data_alvo()
     try:
         dados = buscar_previsao()
-        temp_min, temp_max, chuva_max, vento_max = pegar_horas_do_treino(dados)
+        temp_min, temp_max, chuva_max, vento_max = pegar_horas_do_treino(dados, dia_alvo)
         veredito, problemas = decidir(temp_min, temp_max, chuva_max, vento_max)
 
-        escuro, hora_nascer = esta_escuro(dados)
+        escuro, hora_nascer = esta_escuro(dados, dia_alvo)
         aviso_escuro = ""
         if escuro:
             aviso_escuro = (
-                f"🌙 Você sai às {SAIDA} e o sol nasce às {hora_nascer}: "
+                f"🌙 Amanhã você sai às {SAIDA} e o sol nasce às {hora_nascer}: "
                 f"o dia ainda não clareou. Prefira o Una, que é mais seguro.\n\n"
             )
 
         texto = (
             f"{veredito}\n\n"
-            f"{montar_bloco_treino(escuro=escuro)}"
+            f"{montar_bloco_treino(dia_alvo=dia_alvo, escuro=escuro)}"
             f"{aviso_escuro}"
-            f"📍 Pelotas, das {HORA_INICIO}h às {HORA_FIM}h\n"
+            f"📍 Amanhã em Pelotas, das {HORA_INICIO}h às {HORA_FIM}h\n"
             f"🌡️ Temperatura: {temp_min:.0f}°C a {temp_max:.0f}°C\n"
             f"🌧️ Chance de chuva: até {chuva_max:.0f}%\n"
             f"💨 Vento: até {vento_max:.0f} km/h"
@@ -197,10 +202,10 @@ def rodar():
             texto = texto + "\n\n⚠️ Atenção: " + ", ".join(problemas) + "."
 
     except requests.exceptions.RequestException:
-        # Mesmo sem a previsão, o treino do dia ainda pode ser avisado
+        # Mesmo sem a previsão, o treino de amanhã ainda pode ser avisado
         texto = (
-            "⚠️ Não consegui buscar a previsão do tempo hoje.\n\n"
-            + montar_bloco_treino().rstrip()
+            "⚠️ Não consegui buscar a previsão do tempo para amanhã.\n\n"
+            + montar_bloco_treino(dia_alvo=dia_alvo).rstrip()
         ).rstrip()
 
     try:
