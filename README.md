@@ -1,223 +1,318 @@
-Trabalho Prático Final: Automação e Programabilidade em Redes
-Treinador do Dia: bot de corrida e pedal no Telegram
-Automação em Python que, toda noite, consulta a previsão do tempo, lê o meu plano de treinos e me manda no Telegram o treino da manhã seguinte, a rota recomendada e se o clima estará favorável. Se ainda estiver escuro no horário de saída, ele também avisa e indica a rota mais segura.
 
-1. Sobre o Projeto e Problema Resolvido
-Eu corro e pedalo na rua, saio cedo (por volta das 5h30) e sigo um plano de treinos que muda todo dia: corrida curta, tiros em subida, pedal, treino longo. Antes de dormir, eu precisava:
+# Treinador do Dia 🏃‍♀️ 🚴‍♀️
 
-lembrar qual seria o treino da manhã seguinte;
+### Automação de rotina esportiva com Python e integração de APIs
 
-decidir por onde ir (cada treino pede um tipo de percurso: plano, com subidas, perto de casa);
+**Acadêmica:** Luana Couto  
+**Disciplina:** Automação e Programabilidade em Redes  
+**Professor:** Wagner Loch  
+**Ano:** 2026  
 
-abrir o app do tempo para ver chuva, vento e temperatura previstos para a madrugada/manhã;
+---
 
-verificar se ainda estaria escuro no horário da saída, porque no inverno o dia demora a clarear e a rota precisa ser segura.
+## 1. Apresentação do projeto
 
-Este bot junta tudo isso numa única mensagem, enviada sozinha toda noite por volta das 21h15, sem eu precisar abrir nada e sem o meu computador ligado.
+Este projeto foi desenvolvido com o objetivo de automatizar algumas consultas que realizo diariamente para organizar meus treinos de corrida e ciclismo.
 
-Veredito do tempo (olhando as horas do treino da manhã seguinte, das 5h às 8h):
+Antes de realizar um treino, normalmente preciso consultar a previsão do tempo, verificar meu planejamento e escolher um percurso adequado. A partir dessa necessidade, desenvolvi uma automação que reúne essas informações e envia uma mensagem pelo Telegram na noite anterior ao treino.
 
-Veredito	Quando acontece
-🟢 Ótimo dia	Nenhum problema no tempo
-🟡 Dá para ir, com atenção	Um problema (chuva, vento, frio ou calor)
-🔴 Melhor evitar	Dois ou mais problemas ao mesmo tempo
-Limites usados (podem ser mudados no início do clima_bot.py): chuva acima de 40%, vento acima de 25 km/h, temperatura acima de 28 °C ou abaixo de 8 °C.
+O programa consulta a previsão do tempo em Pelotas – RS, considerando o período das 5h às 8h, identifica o treino programado e apresenta as opções de percurso cadastradas, além de alertas relacionados às condições climáticas.
 
-Segurança: o bot compara o horário em que eu saio (05:30) com o nascer do sol do dia seguinte. Se o dia ainda não clareou, ele avisa e destaca as rotas marcadas como mais seguras no escuro.
+A proposta é facilitar o planejamento da minha rotina esportiva e aplicar, de forma prática, os conhecimentos da disciplina de Automação e Programabilidade em Redes.
 
-2. Arquitetura e Fluxo de Funcionamento
-Etapas do funcionamento:
+## 2. Arquitetura e funcionamento
 
-Início automático: o GitHub Actions executa o programa todos os dias por volta das 21h15 (horário de Brasília), buscando os dados referentes à manhã seguinte (D+1). Também é possível executar o programa manualmente pelo computador.
+O projeto utiliza Python como linguagem principal, sendo responsável pela comunicação com as APIs, leitura dos arquivos JSON, análise das condições climáticas e montagem da mensagem.
 
-Consulta dos treinos: o Python abre o arquivo treinos.json para verificar qual atividade está programada para o dia seguinte. Depois, consulta o arquivo rotas.json para encontrar as opções de percurso.
+A execução é automatizada pelo GitHub Actions, permitindo que o programa funcione na nuvem sem a necessidade de manter meu computador ligado.
 
-Consulta do tempo: o programa acessa a API Open-Meteo, que fornece a previsão horária (temperatura, chuva e vento) e o horário do nascer do sol para os próximos 2 dias.
+### Fluxo de funcionamento
 
-Análise das informações: o Python filtra a janela das 5h às 8h de amanhã, compara a previsão com os limites definidos no código e verifica se ainda estará escuro no horário de saída.
+1. O GitHub Actions inicia a execução do programa.
+2. O Python identifica a data do próximo treino.
+3. O programa consulta a API Open-Meteo.
+4. Os dados meteorológicos são analisados considerando o período das 5h às 8h.
+5. O programa consulta os arquivos JSON de treinos e percursos.
+6. As condições climáticas são classificadas conforme os limites definidos no código.
+7. O Python organiza as informações e monta a mensagem.
+8. A mensagem é enviada ao Telegram por meio de sua API.
 
-Envio da mensagem: depois de organizar todas as informações, o programa envia um resumo completo pelo Telegram.
+### Representação da arquitetura
 
-Requisitos do trabalho e onde estão atendidos:
+```mermaid
+flowchart TD
+    A[GitHub Actions] --> B[Python - clima_bot.py]
+    C[API Open-Meteo] -->|Dados meteorológicos| B
+    D[treinos.json] --> B
+    E[rotas.json] --> B
+    B --> F[Análise das condições climáticas]
+    F --> G[Montagem da mensagem]
+    G -->|HTTPS - POST| H[API do Telegram]
+    H --> I[Notificação no celular]
+```
 
-Requisito	Como foi atendido
-Python	clima_bot.py
-Duas ou mais integrações	API Open-Meteo (tempo) e API de Bots do Telegram
-Tratamento de JSON	Resposta da API Open-Meteo, treinos.json e rotas.json
-Credenciais fora do código	Arquivo .env (local) e GitHub Secrets (nuvem)
-Gatilho automático	GitHub Actions com agendamento diário (cron)
-Tratamento de erros	try/except, timeout, raise_for_status() e tratamento de arquivos JSON ausentes ou inválidos
-3. Tecnologias e APIs Utilizadas
-Para desenvolver o projeto, foram utilizadas as seguintes ferramentas:
+### Cadastro dos treinos e percursos
 
-Python 3: linguagem utilizada para desenvolver o programa.
+Como já possuo meu próprio planejamento de corrida e ciclismo, realizei o cadastro manual dos treinos e percursos nos arquivos JSON.
 
-Requests: biblioteca que permite buscar informações em serviços externos pela internet.
+O arquivo `treinos.json` contém o planejamento dos treinos, enquanto o arquivo `rotas.json` armazena as informações dos percursos cadastrados.
 
-Python-dotenv: utilizada para carregar as informações de acesso que ficam no arquivo .env.
+O programa consulta esses arquivos de acordo com a data do próximo treino e reúne as informações com a previsão do tempo.
 
-Schedule: permite programar o horário de execução quando o programa está rodando continuamente no computador.
+Dessa forma, consigo atualizar meu planejamento sem precisar modificar o código principal em Python.
 
-JSON: formato utilizado para organizar os dados dos treinos, das rotas e das respostas da API.
+### Classificação das condições climáticas
 
-GitHub Actions: permite executar o programa automaticamente na nuvem, sem precisar deixar o computador ligado.
+O programa analisa a probabilidade de chuva, a velocidade do vento e a temperatura, utilizando limites definidos no código.
 
-GitHub Secrets: utilizado para guardar as informações de acesso (token e chat ID) de forma protegida.
+| Parâmetro | Valor de referência |
+|---|---|
+| Horário inicial da análise | 5h |
+| Horário final da análise | 8h |
+| Probabilidade máxima de chuva | 40% |
+| Velocidade máxima do vento | 25 km/h |
+| Temperatura mínima | 8°C |
+| Temperatura máxima | 28°C |
 
-API Open-Meteo: fornece a previsão do tempo e o horário do nascer do sol.
+A partir dessa análise, o programa classifica as condições climáticas em três níveis:
 
-API do Telegram: permite que o programa envie mensagens diretamente para o meu celular.
+- 🟢 **Verde:** nenhum alerta identificado.
+- 🟡 **Amarelo:** um alerta identificado, indicando necessidade de atenção.
+- 🔴 **Vermelho:** dois ou mais alertas identificados.
 
-Organização dos arquivos:
+Essa classificação auxilia no planejamento do treino, mas não substitui a avaliação das condições reais no momento da atividade.
 
-Plaintext
+## 3. Tecnologias e conceitos utilizados
+
+| Tecnologia | Aplicação no projeto |
+|---|---|
+| Python | Processamento dos dados e lógica da automação. |
+| Open-Meteo API | Consulta da previsão do tempo. |
+| Telegram Bot API | Envio das mensagens. |
+| JSON | Organização e armazenamento dos dados. |
+| GitHub | Armazenamento e versionamento do projeto. |
+| GitHub Actions | Execução automatizada na nuvem. |
+| Requests | Biblioteca Python utilizada para realizar requisições HTTP. |
+| HTTPS | Proteção da comunicação com as APIs. |
+| YAML | Configuração do workflow de automação. |
+| Cron | Agendamento das execuções automáticas. |
+| GitHub Secrets | Armazenamento protegido das credenciais. |
+
+### Comunicação em rede
+
+A comunicação entre o programa e os serviços externos ocorre por meio de APIs, utilizando o protocolo HTTPS.
+
+Uma API permite que diferentes sistemas se comuniquem e troquem informações sem a necessidade de intervenção manual.
+
+No projeto, são utilizados dois métodos HTTP:
+
+- **GET:** utilizado para consultar as informações meteorológicas na API Open-Meteo.
+- **POST:** utilizado para enviar a mensagem pela API do Telegram.
+
+O HTTPS utiliza criptografia para proteger os dados durante a comunicação entre o programa e os servidores externos.
+
+As informações meteorológicas são recebidas no formato JSON, permitindo que o Python interprete e utilize os dados na montagem da mensagem.
+
+### Segurança das informações
+
+Para evitar a exposição das credenciais do Telegram, são utilizadas variáveis de ambiente e o GitHub Secrets.
+
+O token do bot e o identificador do chat não devem ser publicados diretamente no código-fonte.
+
+O arquivo `.env.example` serve como modelo para a configuração local, enquanto o arquivo `.gitignore` deve impedir que o arquivo `.env`, contendo as credenciais reais, seja enviado ao repositório.
+
+### Tratamento de erros
+
+O projeto utiliza mecanismos de tratamento de erros para lidar com possíveis falhas durante a execução, como problemas de conexão ou indisponibilidade das APIs.
+
+Em Python, a estrutura `try` e `except` permite tentar executar uma operação e tratar determinadas falhas que possam ocorrer.
+
+Também é utilizado um limite de tempo de espera nas requisições (timeout), evitando que o programa fique aguardando indefinidamente por uma resposta.
+
+Os registros de execução do GitHub Actions auxiliam na identificação e investigação de problemas.
+
+## 4. Estrutura e execução do projeto
+
+### Estrutura dos arquivos
+
+```text
 clima-bot/
-├── clima_bot.py            # o programa principal
-├── treinos.json            # plano de treinos por data
-├── rotas.json              # fichas das rotas (relevo, segurança)
-├── requirements.txt        # bibliotecas necessárias
-├── .env.example            # modelo das credenciais (valores fictícios)
-├── .gitignore              # impede o .env de subir para o repositório
-└── .github/workflows/
-    └── clima.yml           # agendamento no GitHub Actions
-Função de cada arquivo:
+├── .github/
+│   └── workflows/
+│       └── clima.yml
+├── clima_bot.py
+├── treinos.json
+├── rotas.json
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── demo-telegram.png
+├── demo-actions.png
+└── README.md
+```
 
-clima_bot.py: contém o código principal do programa.
+### Função de cada arquivo
 
-treinos.json: guarda os treinos organizados por data.
+| Arquivo | Função |
+|---|---|
+| `clima_bot.py` | Código principal da automação. |
+| `treinos.json` | Armazena os treinos cadastrados manualmente. |
+| `rotas.json` | Armazena os percursos cadastrados manualmente. |
+| `requirements.txt` | Lista as dependências necessárias para executar o programa. |
+| `clima.yml` | Configura a execução automática pelo GitHub Actions. |
+| `.env.example` | Modelo de configuração das variáveis de ambiente. |
+| `.gitignore` | Define os arquivos que não devem ser enviados ao repositório. |
+| `README.md` | Documentação do projeto. |
+| `demo-telegram.png` | Captura de tela da mensagem recebida. |
+| `demo-actions.png` | Captura de tela da execução da automação. |
 
-rotas.json: contém os nomes das rotas e suas características.
+### Passo 1 — Clonar o repositório
 
-requirements.txt: lista as bibliotecas necessárias para executar o projeto.
-
-.env.example: apresenta um modelo das informações de acesso.
-
-.gitignore: impede que arquivos com informações privadas sejam enviados ao GitHub.
-
-clima.yml: configura o horário de execução automática na nuvem.
-
-Exemplo dos arquivos de dados:
-
-No arquivo treinos.json, ficam registrados os treinos de cada dia:
-
-JSON
-{
-  "data": "2026-11-20",
-  "treino": "Tiros: 2 km de aquecimento + 10x100 m em subida + 2 km de desaquecimento",
-  "icone": "⚡",
-  "rotas": ["sprints_quartier", "sprints_una"]
-}
-Já no arquivo rotas.json, ficam as informações sobre os percursos:
-
-JSON
-"sprints_una": {
-  "nome": "Região do Una",
-  "relevo": "percurso com subidinhas",
-  "seguro_no_escuro": true
-}
-Uma vantagem dessa organização é que posso alterar os treinos e as rotas diretamente nos arquivos JSON, sem precisar modificar o código principal do programa.
-
-4. Pré-requisitos e Como Executar
-Para utilizar o projeto, é necessário ter o Python 3.9 ou superior instalado e possuir uma conta no Telegram.
-
-Passo 1 – Criar o bot no Telegram
-
-Abrir o Telegram e procurar por @BotFather.
-
-Enviar o comando /newbot.
-
-Escolher um nome e um usuário para o bot. Após a criação, o Telegram fornecerá um token de acesso.
-
-Abrir a conversa com o bot criado e enviar uma mensagem, como "oi".
-
-Consultar o endereço abaixo no navegador, substituindo pelo token recebido:[https://api.telegram.org/botSEU_TOKEN/getUpdates](https://api.telegram.org/botSEU_TOKEN/getUpdates)
-
-Nessa consulta, localizar o número chamado chat id, que identifica a conversa que receberá as mensagens.
-
-Passo 2 – Baixar e configurar
-
-Bash
+```bash
 git clone https://github.com/luaanasouza/clima-bot.git
 cd clima-bot
-python -m venv venv
-Ativar o ambiente virtual:
+```
 
-Bash
-# Windows
-venv\Scripts\activate
+### Passo 2 — Instalar as dependências
 
-# Linux/Mac
-source venv/bin/activate
-Instalar as bibliotecas:
+É necessário possuir o Python instalado para realizar a execução local.
 
-Bash
+```bash
 pip install -r requirements.txt
-Criar o arquivo .env a partir do modelo .env.example:
+```
 
-Bash
-# Windows
-copy .env.example .env
+### Passo 3 — Configurar o Telegram
 
-# Linux/Mac
-cp .env.example .env
-Abrir o arquivo .env e preencher as informações do TELEGRAM_BOT_TOKEN e do TELEGRAM_CHAT_ID.
+Criar um bot utilizando o BotFather no Telegram e obter o token de autenticação e o identificador do chat.
 
-Passo 3 – Executar no computador
+Para execução local, utilizar o arquivo `.env.example` como referência para configurar as variáveis de ambiente necessárias.
 
-Para testar o funcionamento uma única vez (buscando o treino de amanhã):
+Para execução pelo GitHub Actions, cadastrar as credenciais correspondentes em:
 
-Bash
-python clima_bot.py --agora
-Para deixar o programa executando e enviando as mensagens diariamente às 21h00:
+`Settings > Secrets and variables > Actions`
 
-Bash
+As credenciais reais não devem ser compartilhadas ou publicadas no repositório.
+
+### Passo 4 — Execução automática
+
+O GitHub Actions é responsável pela execução diária da automação na nuvem.
+
+O programa foi desenvolvido para enviar a mensagem no período da noite, permitindo que eu organize o treino da manhã seguinte.
+
+O agendamento é configurado no arquivo `.github/workflows/clima.yml` por meio de uma expressão cron.
+
+Quando configurado em UTC, é necessário considerar a diferença de três horas em relação ao horário de Brasília.
+
+O horário de execução pode sofrer atrasos devido à disponibilidade dos servidores do GitHub.
+
+### Passo 5 — Execução manual
+
+Também é possível testar a automação diretamente pelo GitHub:
+
+1. Acessar a aba **Actions**.
+2. Selecionar o workflow do projeto.
+3. Clicar em **Run workflow**.
+4. Acompanhar os registros de execução.
+5. Verificar o recebimento da mensagem no Telegram.
+
+### Execução local
+
+Após instalar as dependências e configurar as variáveis de ambiente, executar:
+
+```bash
 python clima_bot.py
-Também é possível testar o treino de uma data específica no Windows:
+```
 
-Bash
-set DATA_TESTE=2026-11-20
-python clima_bot.py --agora
-Passo 4 – Configurar a execução automática pelo GitHub
+### Atualização dos treinos
 
-Enviar os arquivos do projeto para o repositório no GitHub, sem incluir o arquivo .env.
+Para cadastrar ou alterar um treino, basta editar o arquivo `treinos.json`, mantendo a estrutura e o formato das informações existentes.
 
-Acessar Settings > Secrets and variables > Actions e criar duas chaves:
+O mesmo procedimento pode ser realizado no arquivo `rotas.json` para atualizar os percursos.
 
-TELEGRAM_BOT_TOKEN
+Não é necessário alterar a lógica principal do programa para atualizar essas informações.
 
-TELEGRAM_CHAT_ID
+## 5. Demonstração e resultados
 
-O arquivo clima.yml já contém a configuração para executar o programa diariamente. O horário configurado é 15 0 * * *, que corresponde às 21h15 no horário de Brasília (UTC−3), pois o GitHub utiliza o fuso horário UTC. A escolha desse horário noturno evita o congestionamento da fila gratuita nas primeiras horas da manhã e garante o planejamento antecipado para o dia seguinte.
+O projeto permite reunir automaticamente informações que antes precisavam ser consultadas separadamente.
 
-Também é possível iniciar uma execução manualmente pela opção: Actions > Clima Bot > Run workflow.
+A mensagem enviada pelo Telegram apresenta:
 
-Segurança das informações:
-O token do Telegram e o chat ID são credenciais sensíveis. Por isso, ficam armazenados no arquivo .env durante os testes locais e nos GitHub Secrets quando o programa é executado na nuvem, evitando exposição no código-fonte público.
+- Data do treino.
+- Treino programado.
+- Opções de percurso cadastradas.
+- Probabilidade de chuva.
+- Temperatura mínima e máxima.
+- Velocidade do vento.
+- Classificação das condições climáticas.
+- Alertas e recomendações conforme as condições analisadas.
 
-5. Demonstração (Resultados)
-(Inserir aqui as capturas de tela demo-telegram.png e demo-actions.png)
+### Mensagem recebida no Telegram
 
-Mensagem recebida no Telegram: exibe o veredito climático, o treino de amanhã, a rota recomendada, o aviso de segurança caso ainda esteja escuro e os dados meteorológicos das 5h às 8h.
+Exemplo de uma mensagem gerada pelo programa a partir da previsão do tempo e das informações cadastradas.
 
-Execução automática pelo GitHub Actions: histórico comprovando os disparos agendados (Scheduled) concluídos com sucesso na nuvem.
+![Demonstração da mensagem no Telegram](demo-telegram.png)
 
-Quando não existe treino cadastrado para o dia seguinte, o bot envia a mensagem:
+### Execução pelo GitHub Actions
 
-"😴 Amanhã não há treino no plano."
+Histórico das execuções realizadas pela automação na nuvem.
 
-6. Melhorias Futuras e Limitações
-Melhorias futuras:
+![Demonstração do GitHub Actions](demo-actions.png)
 
-Consultar uma API de elevação para identificar melhor as subidas e descidas de cada rota.
+[Acessar o histórico de execuções do projeto](https://github.com/luaanasouza/clima-bot/actions/workflows/clima.yml)
 
-Criar um histórico em arquivo CSV para acompanhar as condições do tempo nos dias de treino.
+### Conceitos da disciplina aplicados
 
-Permitir que os treinos sejam cadastrados em uma planilha integrada, facilitando a atualização do planejamento.
+| Conceito | Aplicação prática |
+|---|---|
+| Automação | Execução de tarefas sem intervenção manual. |
+| Programabilidade | Utilização do Python para definir a lógica do programa. |
+| Comunicação em rede | Troca de informações entre o programa e as APIs. |
+| Requisições HTTP | Utilização dos métodos GET e POST. |
+| Segurança | Comunicação HTTPS e proteção das credenciais. |
+| Dados estruturados | Utilização de arquivos JSON. |
+| Agendamento | Execução automática por meio do GitHub Actions. |
+| Diagnóstico de falhas | Tratamento de erros e análise dos registros de execução. |
 
-Limitações atuais:
+## 6. Melhorias futuras e limitações
 
-Os treinos e as informações de segurança das rotas precisam ser cadastrados manualmente nos arquivos JSON.
+### Melhorias futuras
 
-O GitHub Actions (plano gratuito) pode apresentar pequenas variações de minutos no horário programado devido à fila compartilhada.
+- Integrar uma planilha para facilitar o cadastro dos treinos.
+- Criar um histórico das condições climáticas em formato CSV.
+- Integrar uma API de rotas e elevação.
+- Adicionar novas opções de personalização dos alertas.
+- Implementar um controle para evitar notificações duplicadas.
+- Permitir a atualização dos treinos diretamente pelo Telegram.
 
-Caso o repositório fique 60 dias sem alterações, o GitHub suspende o agendamento automático por inatividade, sendo necessário reativá-lo na aba Actions.
+### Limitações atuais
+
+- Os treinos e percursos precisam ser cadastrados manualmente.
+- O programa utiliza previsões meteorológicas e não realiza monitoramento em tempo real.
+- Os percursos são cadastrados previamente, não sendo calculados automaticamente.
+- As condições climáticas são classificadas com base nos limites definidos no código.
+- As informações cadastradas sobre os percursos não representam uma garantia de segurança.
+- O funcionamento depende da disponibilidade das APIs externas.
+- A execução automática pode sofrer atrasos.
+
+## 7. Conclusão
+
+O desenvolvimento deste projeto me permitiu compreender melhor como diferentes sistemas podem se comunicar e trabalhar de forma integrada por meio da automação.
+
+Consegui aplicar conceitos de programação, comunicação em rede, utilização de APIs, segurança das informações e execução de tarefas na nuvem em uma situação que faz parte da minha rotina.
+
+Durante o desenvolvimento, utilizei inteligência artificial como ferramenta de apoio na construção e organização do código, buscando compreender a função de cada componente e como as tecnologias utilizadas se relacionam.
+
+Além de facilitar meu planejamento esportivo, o projeto contribuiu para ampliar meus conhecimentos sobre automação e programabilidade de redes na prática.
+
+## Referências
+
+- [Documentação do Python](https://docs.python.org/3/)
+- [Documentação da Open-Meteo API](https://open-meteo.com/en/docs)
+- [Documentação da Telegram Bot API](https://core.telegram.org/bots/api)
+- [Documentação do GitHub Actions](https://docs.github.com/en/actions)
+- [Documentação da biblioteca Requests](https://requests.readthedocs.io/)
+- [Documentação do JSON](https://www.json.org/)
+
+---
+
+Projeto acadêmico desenvolvido para a disciplina de Automação e Programabilidade em Redes — 2026.
